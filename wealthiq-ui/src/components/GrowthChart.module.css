@@ -1,0 +1,31 @@
+.wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 160px;
+}
+
+.col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--accent), #4f46e5);
+  height: 0;
+  transition: height 0.7s ease;
+  min-height: 4px;
+}
+
+.highlight {
+  background: linear-gradient(180deg, var(--accent-light), #7c3aed);
+}
+
+.label { font-size: 11px; color: var(--text-muted); }
