@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import portfolio, goals
+from app.routers import portfolio, goals, liabilities
 
 app = FastAPI(title="WealthIQ API", version="0.1.0")
 
@@ -13,7 +13,8 @@ app.add_middleware(
 )
 
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
-app.include_router(goals.router,     prefix="/api/goals",     tags=["goals"])
+app.include_router(goals.router,       prefix="/api/goals",       tags=["goals"])
+app.include_router(liabilities.router, prefix="/api/liabilities", tags=["liabilities"])
 
 
 @app.get("/health")

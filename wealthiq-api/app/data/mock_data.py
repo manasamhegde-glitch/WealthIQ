@@ -21,14 +21,24 @@ def to_usd(value: float, currency: str) -> float:
 
 
 def enrich_holdings(holdings: list[dict]) -> list[dict]:
-    """Add value_usd and compute allocation % from total portfolio USD value."""
-    with_usd = [{**h, "value_usd": to_usd(h["value"], h.get("currency", "USD"))}
-                for h in holdings]
+    """Add value_usd, contribution_usd, and compute allocation % from total portfolio USD value."""
+    with_usd = [
+        {
+            **h,
+            "value_usd": to_usd(h["value"], h.get("currency", "USD")),
+            "contribution_usd": to_usd(h.get("contribution", 0.0), h.get("currency", "USD")),
+        }
+        for h in holdings
+    ]
     total = sum(h["value_usd"] for h in with_usd)
     return [
         {**h, "allocation": round(h["value_usd"] / total * 100, 1) if total else 0}
         for h in with_usd
     ]
+
+
+def enrich_liability(l: dict) -> dict:
+    return {**l, "balance_usd": to_usd(l["balance"], l.get("currency", "USD"))}
 
 
 def enrich_goal(g: dict) -> dict:
@@ -56,11 +66,24 @@ GROWTH: list[GrowthPoint] = [
 ]
 
 HOLDINGS: list[dict] = [
-    {"id": "h1", "name": "Nifty 50 ETF",    "type": "Mutual Funds", "currency": "INR", "value": 1_500_000, "change": 3.2},
-    {"id": "h2", "name": "HDFC Bank",        "type": "Stocks",       "currency": "INR", "value": 780_000,   "change": 1.8},
-    {"id": "h3", "name": "Govt Bond 2031",   "type": "Bonds",        "currency": "INR", "value": 635_000,   "change": 0.4},
-    {"id": "h4", "name": "US S&P 500 Index", "type": "Mutual Funds", "currency": "USD", "value": 5_300,     "change": -0.6},
-    {"id": "h5", "name": "Liquid Fund",      "type": "FD",           "currency": "INR", "value": 190_000,   "change": 0.1},
+    # SIP – monthly contribution
+    {"id": "h1", "name": "Nifty 50 ETF",    "type": "Mutual Funds", "currency": "INR", "value": 1_500_000, "change": 3.2,  "start_date": "Jan 2023", "maturity_date": "",        "contribution": 10_000, "contribution_freq": "Monthly"},
+    # Stocks – lump-sum, no periodic investment
+    {"id": "h2", "name": "HDFC Bank",        "type": "Stocks",       "currency": "INR", "value": 780_000,   "change": 1.8,  "start_date": "Mar 2022", "maturity_date": "",        "contribution": 0,      "contribution_freq": "None"},
+    # Bond – matures, no ongoing contribution
+    {"id": "h3", "name": "Govt Bond 2031",   "type": "Bonds",        "currency": "INR", "value": 635_000,   "change": 0.4,  "start_date": "Jan 2021", "maturity_date": "Dec 2031","contribution": 0,      "contribution_freq": "None"},
+    # SIP in USD – monthly contribution
+    {"id": "h4", "name": "US S&P 500 Index", "type": "Mutual Funds", "currency": "USD", "value": 5_300,     "change": -0.6, "start_date": "Jun 2024", "maturity_date": "",        "contribution": 200,    "contribution_freq": "Monthly"},
+    # RD – monthly fixed deposit
+    {"id": "h5", "name": "Liquid Fund RD",   "type": "RD",           "currency": "INR", "value": 190_000,   "change": 6.5,  "start_date": "Nov 2025", "maturity_date": "Nov 2028","contribution": 5_000,  "contribution_freq": "Monthly"},
+    # NPS – yearly contribution
+    {"id": "h6", "name": "NPS Tier-I",       "type": "NPS",          "currency": "INR", "value": 320_000,   "change": 9.2,  "start_date": "Apr 2020", "maturity_date": "",        "contribution": 50_000, "contribution_freq": "Yearly"},
+]
+
+LIABILITIES: list[dict] = [
+    {"id": "l1", "name": "Home Loan – HDFC",    "type": "Mortgage",     "currency": "INR", "balance": 5_000_000, "interest_rate": 8.5,  "start_date": "Jan 2022", "end_date": "Dec 2042"},
+    {"id": "l2", "name": "Car Loan – Axis",      "type": "Car Loan",     "currency": "INR", "balance": 450_000,   "interest_rate": 9.2,  "start_date": "Mar 2024", "end_date": "Feb 2028"},
+    {"id": "l3", "name": "Personal Loan – SBI",  "type": "Personal Loan","currency": "INR", "balance": 120_000,   "interest_rate": 11.5, "start_date": "Jun 2025", "end_date": "May 2027"},
 ]
 
 GOALS: list[dict] = [

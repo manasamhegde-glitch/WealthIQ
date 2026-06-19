@@ -314,3 +314,116 @@
   gap: 8px;
   align-items: center;
 }
+
+/* ── Section header (title + add button row) ── */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+/* ── Net Worth bar ── */
+.netBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 28px;
+  margin-bottom: 28px;
+}
+
+.netCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.netDivider {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  margin: 0 24px;
+}
+
+.netLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+
+.netValue {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* ── Liability table row (6 cols, wider period col) ── */
+.rowLiab {
+  grid-template-columns: 2fr 1fr 1.3fr 0.7fr 1.6fr 52px;
+}
+
+.liabBadge {
+  border-color: color-mix(in srgb, var(--red) 35%, transparent);
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
+}
+
+.rateCell {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.periodCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.periodArrow {
+  color: var(--text-muted);
+}
+
+.periodEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Date sub-row shown below asset edit row */
+.dateSubRow {
+  display: flex;
+  gap: 16px;
+  padding: 8px 20px 12px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border);
+}
+
+.dateSubRow .formLabel {
+  flex: 1;
+}
+
+/* Date line below asset name in read mode */
+.dateLine {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+/* Periodic contribution sub-line below asset name */
+.contribLine {
+  display: block;
+  font-size: 11px;
+  color: var(--accent-light);
+  margin-top: 2px;
+  font-weight: 500;
+  opacity: 0.85;
+}

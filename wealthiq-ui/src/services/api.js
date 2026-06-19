@@ -26,7 +26,11 @@ export const api = {
   createHolding: (data)     => mutate('POST', '/portfolio/holdings', data),
   updateHolding: (id, data) => mutate('PUT', `/portfolio/holdings/${id}`, data),
   deleteHolding: (id)       => mutate('DELETE', `/portfolio/holdings/${id}`),
-  createGoal:    (data)     => mutate('POST', '/goals', data),
+  getLiabilities:    ()          => get('/liabilities'),
+  createLiability:   (data)     => mutate('POST', '/liabilities', data),
+  updateLiability:   (id, data) => mutate('PUT', `/liabilities/${id}`, data),
+  deleteLiability:   (id)       => mutate('DELETE', `/liabilities/${id}`),
+  createGoal:        (data)     => mutate('POST', '/goals', data),
   updateGoal:    (id, data) => mutate('PUT', `/goals/${id}`, data),
   deleteGoal:    (id)       => mutate('DELETE', `/goals/${id}`),
 }

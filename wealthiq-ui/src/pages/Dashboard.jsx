@@ -1,17 +1,26 @@
 import StatCard from '../components/StatCard'
 import GrowthChart from '../components/GrowthChart'
 import GoalProgress from '../components/GoalProgress'
-import { usePortfolio, useGoals } from '../hooks/usePortfolio'
+import WealthProjectionChart from '../components/WealthProjectionChart'
+import { usePortfolio, useGoals, useHoldings, useLiabilities } from '../hooks/usePortfolio'
+import { fmtUsd, fmtOrig } from '../utils/currency'
+import { projectWealth, getHorizon } from '../utils/projection'
 import styles from './Page.module.css'
 
 export default function Dashboard() {
   const { data, loading, error } = usePortfolio()
-  const { goals } = useGoals()
+  const { goals }                = useGoals()
+  const { holdings }             = useHoldings()
+  const { liabilities }          = useLiabilities()
 
   if (loading) return <div className={styles.state}>Loading...</div>
   if (error)   return <div className={styles.state}>Failed to load data.</div>
 
   const { summary, growth } = data
+
+  const currentYear  = new Date().getFullYear()
+  const horizonYear  = getHorizon(holdings, liabilities)
+  const projData     = projectWealth(holdings, liabilities, currentYear, horizonYear)
 
   return (
     <main className={styles.page}>
@@ -47,6 +56,52 @@ export default function Dashboard() {
         <h2 className={styles.sectionTitle}>Financial Growth</h2>
         <div className={styles.chartCard}>
           <GrowthChart data={growth} />
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Wealth Trajectory</h2>
+        <WealthProjectionChart data={projData} />
+      </section>
+
+      <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>Assets</h2>
+        <div className={styles.table}>
+          <div className={`${styles.row} ${styles.thead}`}>
+            <span>Asset</span>
+            <span>Type</span>
+            <span>Value (USD)</span>
+            <span>Change</span>
+            <span>Allocation</span>
+          </div>
+          {holdings.map(h => (
+            <div key={h.id} className={styles.row}>
+              <span>
+                <span className={styles.assetName}>{h.name}</span>
+                {(h.start_date || h.maturity_date) && (
+                  <span className={styles.dateLine}>
+                    {h.start_date}{h.start_date && h.maturity_date && ' → '}{h.maturity_date}
+                  </span>
+                )}
+                {h.contribution > 0 && h.contribution_freq !== 'None' && (
+                  <span className={styles.contribLine}>
+                    {fmtOrig(h.contribution, h.currency)}/{h.contribution_freq === 'Monthly' ? 'mo' : 'yr'}
+                  </span>
+                )}
+              </span>
+              <span><span className={styles.badge}>{h.type}</span></span>
+              <span>
+                {fmtUsd(h.value_usd)}
+                {h.currency !== 'USD' && (
+                  <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>
+                )}
+              </span>
+              <span className={h.change >= 0 ? styles.up : styles.down}>
+                {h.change >= 0 ? '+' : ''}{h.change}%
+              </span>
+              <span>{h.allocation}%</span>
+            </div>
+          ))}
         </div>
       </section>
 
