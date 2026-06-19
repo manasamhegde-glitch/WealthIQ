@@ -1,4 +1,39 @@
-from app.models.schemas import PortfolioSummary, GrowthPoint, Holding, Goal
+from app.models.schemas import PortfolioSummary, GrowthPoint
+
+# 1 unit of each currency in USD
+EXCHANGE_RATES: dict[str, float] = {
+    "USD": 1.0,
+    "INR": 0.012,
+    "EUR": 1.08,
+    "GBP": 1.27,
+    "JPY": 0.0067,
+    "SGD": 0.74,
+    "AED": 0.27,
+    "CAD": 0.74,
+    "AUD": 0.65,
+}
+
+CURRENCIES = list(EXCHANGE_RATES.keys())
+
+
+def to_usd(value: float, currency: str) -> float:
+    return round(value * EXCHANGE_RATES.get(currency, 1.0), 2)
+
+
+def enrich_holdings(holdings: list[dict]) -> list[dict]:
+    """Add value_usd and compute allocation % from total portfolio USD value."""
+    with_usd = [{**h, "value_usd": to_usd(h["value"], h.get("currency", "USD"))}
+                for h in holdings]
+    total = sum(h["value_usd"] for h in with_usd)
+    return [
+        {**h, "allocation": round(h["value_usd"] / total * 100, 1) if total else 0}
+        for h in with_usd
+    ]
+
+
+def enrich_goal(g: dict) -> dict:
+    return {**g, "target_usd": to_usd(g["target"], g.get("currency", "USD"))}
+
 
 SUMMARY = PortfolioSummary(
     user_name="Manasa Hegde",
@@ -20,16 +55,16 @@ GROWTH: list[GrowthPoint] = [
     GrowthPoint(month="Jun", value=42850, highlight=True),
 ]
 
-HOLDINGS: list[Holding] = [
-    Holding(id="h1", name="Nifty 50 ETF",      type="ETF",    value=18200, change=3.2,  allocation=42),
-    Holding(id="h2", name="HDFC Bank",          type="Equity", value=9400,  change=1.8,  allocation=22),
-    Holding(id="h3", name="Govt Bond 2031",     type="Bond",   value=7650,  change=0.4,  allocation=18),
-    Holding(id="h4", name="US S&P 500 Index",   type="ETF",    value=5300,  change=-0.6, allocation=12),
-    Holding(id="h5", name="Liquid Fund",         type="Cash",   value=2300,  change=0.1,  allocation=6),
+HOLDINGS: list[dict] = [
+    {"id": "h1", "name": "Nifty 50 ETF",    "type": "Mutual Funds", "currency": "INR", "value": 1_500_000, "change": 3.2},
+    {"id": "h2", "name": "HDFC Bank",        "type": "Stocks",       "currency": "INR", "value": 780_000,   "change": 1.8},
+    {"id": "h3", "name": "Govt Bond 2031",   "type": "Bonds",        "currency": "INR", "value": 635_000,   "change": 0.4},
+    {"id": "h4", "name": "US S&P 500 Index", "type": "Mutual Funds", "currency": "USD", "value": 5_300,     "change": -0.6},
+    {"id": "h5", "name": "Liquid Fund",      "type": "FD",           "currency": "INR", "value": 190_000,   "change": 0.1},
 ]
 
-GOALS: list[Goal] = [
-    Goal(id="g1", name="Emergency Fund",       current=42850, target=60000, deadline="Dec 2026", status="active"),
-    Goal(id="g2", name="Home Down Payment",    current=10000, target=150000, deadline="Dec 2028", status="active"),
-    Goal(id="g3", name="Retirement Corpus",    current=5000,  target=2000000, deadline="Dec 2045", status="active"),
+GOALS: list[dict] = [
+    {"id": "g1", "name": "Emergency Fund",    "currency": "INR", "target": 5_000_000,   "deadline": "Dec 2026"},
+    {"id": "g2", "name": "Home Down Payment", "currency": "INR", "target": 12_000_000,  "deadline": "Dec 2028"},
+    {"id": "g3", "name": "Retirement Corpus", "currency": "INR", "target": 165_000_000, "deadline": "Dec 2045"},
 ]

@@ -15,6 +15,8 @@ Global financial intelligence platform designed to estimate and forecast investm
 cd wealthiq-api
 pip install -r requirements.txt
 uvicorn main:app --reload
+ or 
+  python -m uvicorn main:app --reload
 # Swagger UI → http://localhost:8000/docs
 ```
 

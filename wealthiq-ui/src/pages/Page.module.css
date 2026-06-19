@@ -104,3 +104,213 @@
 
 .up   { color: var(--green); }
 .down { color: var(--red); }
+
+/* ── Portfolio value with original currency ── */
+
+.origAmount {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.allocComputed {
+  font-size: 13px;
+  color: var(--text-muted);
+  align-self: center;
+}
+
+.formError {
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* Inline value + currency select in edit row */
+.valueEditGroup {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* ── Portfolio edit ── */
+
+/* 6-column row variant (adds actions column) */
+.rowWide {
+  grid-template-columns: 2fr 1fr 1.2fr 1fr 1fr 52px;
+}
+
+.editRow {
+  background: var(--bg-raised);
+}
+
+.rowActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.editInput {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.editInput:focus {
+  border-color: var(--accent);
+}
+
+.editSelect {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+}
+
+.editSelect:focus {
+  border-color: var(--accent);
+}
+
+.btnEdit {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 3px 7px;
+  line-height: 1;
+  transition: border-color .15s, color .15s;
+}
+
+.btnEdit:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.btnSave {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  transition: opacity .15s;
+}
+
+.btnSave:hover { opacity: .85; }
+
+.btnCancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 5px 12px;
+  transition: border-color .15s;
+}
+
+.btnCancel:hover { border-color: var(--text-secondary); }
+
+.btnDelete {
+  background: none;
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 5px 12px;
+  margin-left: auto;
+  transition: background .15s;
+}
+
+.btnDelete:hover { background: color-mix(in srgb, var(--red) 12%, transparent); }
+
+/* ── Goals page ── */
+
+.goalPageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.btnAdd {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: opacity .15s;
+}
+
+.btnAdd:hover { opacity: .85; }
+
+.goalWrap {
+  margin-bottom: 4px;
+}
+
+.goalActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 4px 16px;
+}
+
+/* Goal edit / add form card */
+.goalForm {
+  background: var(--bg-surface);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.formTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-light);
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.formLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

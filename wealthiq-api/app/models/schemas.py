@@ -1,4 +1,10 @@
 from pydantic import BaseModel
+from typing import Optional
+
+SAVINGS_TYPES = [
+    "NPS", "FD", "RD", "Bonds", "PF", "PPF", "EPF",
+    "Mutual Funds", "Stocks", "Others",
+]
 
 
 class PortfolioSummary(BaseModel):
@@ -21,16 +27,48 @@ class GrowthPoint(BaseModel):
 class Holding(BaseModel):
     id: str
     name: str
-    type: str       # Equity | Bond | ETF | Cash
-    value: float
-    change: float   # % change
+    type: str
+    currency: str
+    value: float        # original currency
+    value_usd: float    # computed on server
+    change: float
     allocation: float
+
+
+class HoldingCreate(BaseModel):
+    name: str
+    type: str
+    currency: str = "USD"
+    value: float
+    change: float
+
+
+class HoldingUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    currency: Optional[str] = None
+    value: Optional[float] = None
+    change: Optional[float] = None
 
 
 class Goal(BaseModel):
     id: str
     name: str
-    current: float
+    currency: str
+    target: float       # original currency
+    target_usd: float   # computed on server
+    deadline: str
+
+
+class GoalCreate(BaseModel):
+    name: str
+    currency: str = "USD"
     target: float
-    deadline: str   # e.g. "Dec 2026"
-    status: str     # active | completed | upcoming
+    deadline: str
+
+
+class GoalUpdate(BaseModel):
+    name: Optional[str] = None
+    currency: Optional[str] = None
+    target: Optional[float] = None
+    deadline: Optional[str] = None

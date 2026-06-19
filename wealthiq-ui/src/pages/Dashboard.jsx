@@ -56,8 +56,9 @@ export default function Dashboard() {
           <GoalProgress
             key={g.id}
             name={g.name}
-            current={g.current}
+            currency={g.currency}
             target={g.target}
+            targetUsd={g.target_usd}
             deadline={g.deadline}
           />
         ))}
