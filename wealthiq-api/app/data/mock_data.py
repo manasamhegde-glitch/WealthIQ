@@ -70,13 +70,13 @@ GROWTH: list[GrowthPoint] = [
 
 HOLDINGS: list[dict] = [
     # SIP – monthly contribution; ₹9L lumpsum Jan 2023 + ₹10K/mo SIP
-    {"id": "h1", "name": "Nifty 50 ETF",    "type": "Mutual Funds", "currency": "INR", "value": 1_500_000, "change": 3.2,  "start_date": "Jan 2023", "maturity_date": "",        "contribution": 10_000, "contribution_freq": "Monthly", "cost_basis": 900_000},
+    {"id": "h1", "name": "Nifty 50",    "type": "Mutual Funds", "currency": "INR", "value": 1_500_000, "change": 3.2,  "start_date": "Jan 2023", "maturity_date": "",        "contribution": 10_000, "contribution_freq": "Monthly", "cost_basis": 900_000},
     # Stocks – lump-sum ₹6.8L, no SIP
     {"id": "h2", "name": "HDFC Bank",        "type": "Stocks",       "currency": "INR", "value": 780_000,   "change": 1.8,  "start_date": "Mar 2022", "maturity_date": "",        "contribution": 0,      "contribution_freq": "None",    "cost_basis": 680_000},
     # Bond – lump-sum ₹6.1L, matures Dec 2031
-    {"id": "h3", "name": "Govt Bond 2031",   "type": "Bonds",        "currency": "INR", "value": 635_000,   "change": 0.4,  "start_date": "Jan 2021", "maturity_date": "Dec 2031","contribution": 0,      "contribution_freq": "None",    "cost_basis": 610_000},
+    {"id": "h3", "name": "Govt Bond 2031",   "type": "Bonds",        "currency": "INR", "value": 300_000,   "change": 0.4,  "start_date": "Jan 2021", "maturity_date": "Dec 2031","contribution": 0,      "contribution_freq": "None",    "cost_basis": 610_000},
     # SIP in USD – no lumpsum, pure $200/mo SIP from Jun 2024
-    {"id": "h4", "name": "US S&P 500 Index", "type": "Mutual Funds", "currency": "USD", "value": 5_300,     "change": -0.6, "start_date": "Jun 2024", "maturity_date": "",        "contribution": 200,    "contribution_freq": "Monthly", "cost_basis": 0},
+    {"id": "h4", "name": "US S&P 500 ", "type": "Mutual Funds", "currency": "USD", "value": 5_300,     "change": 4.0, "start_date": "Jun 2024", "maturity_date": "",        "contribution": 200,    "contribution_freq": "Monthly", "cost_basis": 0},
     # RD – ₹1.5L lumpsum + ₹5K/mo SIP from Nov 2025
     {"id": "h5", "name": "Liquid Fund RD",   "type": "RD",           "currency": "INR", "value": 190_000,   "change": 6.5,  "start_date": "Nov 2025", "maturity_date": "Nov 2028","contribution": 5_000,  "contribution_freq": "Monthly", "cost_basis": 150_000},
     # NPS – ₹2L lumpsum + ₹50K/yr from Apr 2020; value updated to reflect 9.2% growth
