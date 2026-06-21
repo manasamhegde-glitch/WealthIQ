@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { CURRENCIES, fmtUsd, fmtOrig } from '../utils/currency'
+import { holdingXIRR } from '../utils/xirr'
 import styles from './Page.module.css'
 
 const SAVINGS_TYPES       = ['NPS', 'FD', 'RD', 'Bonds', 'PF', 'PPF', 'EPF', 'Mutual Funds', 'Stocks', 'Others']
@@ -11,6 +12,7 @@ const BLANK_ASSET = {
   name: '', type: 'Stocks', currency: 'USD', value: '', change: '',
   start_date: '', maturity_date: '',
   contribution: '', contribution_freq: 'None',
+  cost_basis: '',
 }
 const BLANK_LIAB = {
   name: '', type: 'Mortgage', currency: 'USD',
@@ -45,6 +47,10 @@ export default function Portfolio() {
   const totalLiab   = liabilities.reduce((s, l) => s + l.balance_usd, 0)
   const netWorth    = totalAssets - totalLiab
 
+  // XIRR per holding (computed from cost_basis + SIPs + current value)
+  const xirrMap = {}
+  holdings.forEach(h => { xirrMap[h.id] = holdingXIRR(h) })
+
   // ── asset handlers ──────────────────────────────────────────────────────────
   const startAssetEdit = (h) => {
     setAddingAsset(false); setError('')
@@ -55,6 +61,7 @@ export default function Portfolio() {
       start_date: h.start_date, maturity_date: h.maturity_date,
       contribution: h.contribution ?? 0,
       contribution_freq: h.contribution_freq ?? 'None',
+      cost_basis: h.cost_basis ?? 0,
     })
   }
   const cancelAssetEdit = () => { setAssetEditId(null); setError('') }
@@ -68,6 +75,7 @@ export default function Portfolio() {
       start_date: assetForm.start_date, maturity_date: assetForm.maturity_date,
       contribution: parseFloat(assetForm.contribution) || 0,
       contribution_freq: assetForm.contribution_freq || 'None',
+      cost_basis: parseFloat(assetForm.cost_basis) || 0,
     })
     setHoldings(await api.getHoldings())
     setAssetEditId(null)
@@ -87,6 +95,7 @@ export default function Portfolio() {
       start_date: addAssetForm.start_date, maturity_date: addAssetForm.maturity_date,
       contribution: parseFloat(addAssetForm.contribution) || 0,
       contribution_freq: addAssetForm.contribution_freq || 'None',
+      cost_basis: parseFloat(addAssetForm.cost_basis) || 0,
     })
     setHoldings(await api.getHoldings())
     setAddingAsset(false); setAddAssetForm(BLANK_ASSET)
@@ -222,7 +231,7 @@ export default function Portfolio() {
               </span>
             </div>
 
-            {/* Sub-row: dates + contribution */}
+            {/* Sub-row: dates + contribution + cost basis */}
             <div className={`${styles.dateSubRow} ${styles.editRow}`}>
               <label className={styles.formLabel}>
                 Start Date
@@ -244,6 +253,10 @@ export default function Portfolio() {
                   <input className={styles.editInput} type="number" {...aField('contribution')} placeholder="10000" />
                 </label>
               )}
+              <label className={styles.formLabel}>
+                Initial Investment
+                <input className={styles.editInput} type="number" {...aField('cost_basis')} placeholder="0" />
+              </label>
             </div>
           </React.Fragment>
         ) : (
@@ -266,8 +279,15 @@ export default function Portfolio() {
               {fmtUsd(h.value_usd)}
               {h.currency !== 'USD' && <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>}
             </span>
-            <span className={h.change >= 0 ? styles.up : styles.down}>
-              {h.change >= 0 ? '+' : ''}{h.change}%
+            <span>
+              <span className={h.change >= 0 ? styles.up : styles.down}>
+                {h.change >= 0 ? '+' : ''}{h.change}%
+              </span>
+              {xirrMap[h.id] !== null && xirrMap[h.id] !== undefined && (
+                <span className={styles.xirrLine}>
+                  XIRR {(xirrMap[h.id] * 100) >= 0 ? '+' : ''}{(xirrMap[h.id] * 100).toFixed(1)}%
+                </span>
+              )}
             </span>
             <span>{h.allocation}%</span>
             <span className={styles.rowActions}>
@@ -394,6 +414,9 @@ function AssetFields({ form, onChange }) {
       </label>
       <label className={styles.formLabel}>Maturity Date
         <input className={styles.editInput} placeholder="Dec 2031" {...f('maturity_date')} />
+      </label>
+      <label className={styles.formLabel}>Initial Investment
+        <input className={styles.editInput} type="number" placeholder="0" {...f('cost_basis')} />
       </label>
     </>
   )

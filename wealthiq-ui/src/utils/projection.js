@@ -44,13 +44,13 @@ export function projectWealth(holdings, liabilities, currentYear, horizonYear) {
         const nm = t * 12
         if (rm === 0) return sum + h.value_usd + c * nm
         const powM = Math.pow(1 + rm, nm)
-        return sum + h.value_usd * powM + c * (powM - 1) / rm
+        return sum + h.value_usd * powM + c * (powM - 1) / rm * (1 + rm)
       }
 
       if (c > 0 && freq === 'Yearly') {
         if (r === 0) return sum + h.value_usd + c * t
         const pow = Math.pow(1 + r, t)
-        return sum + h.value_usd * pow + c * (pow - 1) / r
+        return sum + h.value_usd * pow + c * (pow - 1) / r * (1 + r)
       }
 
       // Lump-sum: simple compound growth

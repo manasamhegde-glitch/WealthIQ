@@ -602,3 +602,12 @@
   font-weight: 500;
   opacity: 0.85;
 }
+
+/* XIRR sub-line below change % in asset table */
+.xirrLine {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-weight: 400;
+}

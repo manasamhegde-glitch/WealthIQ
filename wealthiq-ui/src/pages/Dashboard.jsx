@@ -3,6 +3,7 @@ import WealthProjectionChart from '../components/WealthProjectionChart'
 import { usePortfolio, useGoals, useHoldings, useLiabilities } from '../hooks/usePortfolio'
 import { fmtUsd, fmtOrig } from '../utils/currency'
 import { projectWealth, getHorizon, parseYear } from '../utils/projection'
+import { holdingXIRR } from '../utils/xirr'
 import styles from './Page.module.css'
 
 export default function Dashboard() {
@@ -156,8 +157,13 @@ export default function Dashboard() {
                   <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>
                 )}
               </span>
-              <span className={h.change >= 0 ? styles.up : styles.down}>
-                {h.change >= 0 ? '+' : ''}{h.change}%
+              <span>
+                <span className={h.change >= 0 ? styles.up : styles.down}>
+                  {h.change >= 0 ? '+' : ''}{h.change}%
+                </span>
+                {(() => { const x = holdingXIRR(h); return x !== null ? (
+                  <span className={styles.xirrLine}>XIRR {(x * 100) >= 0 ? '+' : ''}{(x * 100).toFixed(1)}%</span>
+                ) : null })()}
               </span>
               <span>{h.allocation}%</span>
             </div>

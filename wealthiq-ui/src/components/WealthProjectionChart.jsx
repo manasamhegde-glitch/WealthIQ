@@ -3,11 +3,7 @@ import { niceTicks } from '../utils/projection'
 import { fmtUsd } from '../utils/currency'
 import styles from './WealthProjectionChart.module.css'
 
-const LINES = [
-  { key: 'assets',      label: 'Assets',      color: 'var(--green)' },
-  { key: 'liabilities', label: 'Liabilities', color: 'var(--red)' },
-  { key: 'netWorth',    label: 'Net Worth',   color: 'var(--accent-light)' },
-]
+const NET_WORTH_COLOR = 'var(--accent-light)'
 
 function fmtAxis(v) {
   const abs = Math.abs(v)
@@ -27,7 +23,7 @@ export default function WealthProjectionChart({ data, retirementGoal }) {
   const iW = W - pad.left - pad.right
   const iH = H - pad.top - pad.bottom
 
-  const allVals = data.flatMap(d => [d.assets, d.liabilities, d.netWorth])
+  const allVals = data.map(d => d.netWorth)
   const ticks = niceTicks(Math.min(...allVals), Math.max(...allVals))
   const minY = ticks[0]
   const maxY = ticks[ticks.length - 1]
@@ -65,15 +61,6 @@ export default function WealthProjectionChart({ data, retirementGoal }) {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.legend}>
-        {LINES.map(l => (
-          <span key={l.key} className={styles.legendItem}>
-            <span className={styles.legendSwatch} style={{ background: l.color }} />
-            {l.label}
-          </span>
-        ))}
-      </div>
-
       <div className={styles.chartArea}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
@@ -105,13 +92,10 @@ export default function WealthProjectionChart({ data, retirementGoal }) {
               textAnchor="middle" className={styles.tick}>{data[i].year}</text>
           ))}
 
-          {/* Data lines — liabilities first, net worth on top */}
-          {LINES.slice().reverse().map(l => (
-            <path key={l.key} d={linePath(l.key)} fill="none"
-              style={{ stroke: l.color }}
-              strokeWidth={l.key === 'netWorth' ? 2.8 : 2}
-              strokeLinejoin="round" strokeLinecap="round" />
-          ))}
+          {/* Net Worth line */}
+          <path d={linePath('netWorth')} fill="none"
+            stroke={NET_WORTH_COLOR} strokeWidth="2.8"
+            strokeLinejoin="round" strokeLinecap="round" />
 
           {/* Hover indicator line */}
           {hover && (
@@ -129,13 +113,13 @@ export default function WealthProjectionChart({ data, retirementGoal }) {
             onMouseMove={handleMouseMove}
           />
 
-          {/* Dots on each line at hover position (drawn after rect to appear on top) */}
-          {hover && LINES.map(l => (
-            <circle key={l.key}
-              cx={xS(hover.idx)} cy={yS(data[hover.idx][l.key])}
-              r="4" style={{ fill: l.color }} stroke="var(--bg-surface)" strokeWidth="2"
+          {/* Dot on net worth line at hover position */}
+          {hover && (
+            <circle
+              cx={xS(hover.idx)} cy={yS(data[hover.idx].netWorth)}
+              r="4" fill={NET_WORTH_COLOR} stroke="var(--bg-surface)" strokeWidth="2"
             />
-          ))}
+          )}
         </svg>
 
         {/* Tooltip */}

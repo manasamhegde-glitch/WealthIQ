@@ -43,6 +43,8 @@ class Holding(BaseModel):
     contribution: float = 0.0       # periodic contribution in original currency
     contribution_freq: str = "None" # None | Monthly | Yearly
     contribution_usd: float = 0.0   # computed on server
+    cost_basis: float = 0.0         # initial lumpsum invested (original currency)
+    cost_basis_usd: float = 0.0     # computed on server
 
 
 class HoldingCreate(BaseModel):
@@ -55,6 +57,7 @@ class HoldingCreate(BaseModel):
     maturity_date: str = ""
     contribution: float = 0.0
     contribution_freq: str = "None"
+    cost_basis: float = 0.0
 
 
 class HoldingUpdate(BaseModel):
@@ -67,6 +70,7 @@ class HoldingUpdate(BaseModel):
     maturity_date: Optional[str] = None
     contribution: Optional[float] = None
     contribution_freq: Optional[str] = None
+    cost_basis: Optional[float] = None
 
 
 LIABILITY_TYPES = [
