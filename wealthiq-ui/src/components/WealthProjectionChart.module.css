@@ -27,15 +27,67 @@
   flex-shrink: 0;
 }
 
+/* Wrapper that anchors the absolute tooltip */
+.chartArea {
+  position: relative;
+}
+
 .svg {
   width: 100%;
   height: auto;
   display: block;
   overflow: visible;
+  cursor: crosshair;
 }
 
 .tick {
   font-size: 11px;
   fill: var(--text-muted);
   font-family: inherit;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  top: 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  pointer-events: none;
+  z-index: 10;
+  min-width: 168px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.tooltipYear {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.tooltipRow:last-child {
+  margin-bottom: 0;
+}
+
+.tooltipLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tooltipVal {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
 }

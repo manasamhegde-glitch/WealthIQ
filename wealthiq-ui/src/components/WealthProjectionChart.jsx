@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { niceTicks } from '../utils/projection'
+import { fmtUsd } from '../utils/currency'
 import styles from './WealthProjectionChart.module.css'
 
 const LINES = [
@@ -15,7 +17,9 @@ function fmtAxis(v) {
   return `${sign}$${abs}`
 }
 
-export default function WealthProjectionChart({ data }) {
+export default function WealthProjectionChart({ data, retirementGoal }) {
+  const [hover, setHover] = useState(null)
+
   if (!data || data.length < 2) return null
 
   const W = 820, H = 320
@@ -37,7 +41,6 @@ export default function WealthProjectionChart({ data }) {
       .map((d, i) => `${i === 0 ? 'M' : 'L'}${xS(i).toFixed(1)},${yS(d[key]).toFixed(1)}`)
       .join(' ')
 
-  // ~6 x-axis labels spaced evenly
   const n = data.length
   const xStep = Math.max(1, Math.round(n / 6))
   const xIndices = [...new Set([
@@ -47,6 +50,18 @@ export default function WealthProjectionChart({ data }) {
 
   const zeroY = yS(0)
   const showZero = minY < 0 && maxY > 0
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relX = (e.clientX - rect.left) / rect.width
+    const mouseX = relX * W
+    const raw = (mouseX - pad.left) / iW * (data.length - 1)
+    const idx = Math.max(0, Math.min(data.length - 1, Math.round(raw)))
+    setHover({ idx, pct: xS(idx) / W })
+  }
+
+  // Flip tooltip left when near the right edge
+  const tipOnLeft = hover && hover.pct > 0.6
 
   return (
     <div className={styles.wrap}>
@@ -59,64 +74,95 @@ export default function WealthProjectionChart({ data }) {
         ))}
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.svg} aria-label="Wealth trajectory projection">
+      <div className={styles.chartArea}>
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className={styles.svg}
+          aria-label="Wealth trajectory projection"
+          onMouseLeave={() => setHover(null)}
+        >
+          {/* Y grid + labels */}
+          {ticks.map(v => (
+            <g key={v}>
+              <line x1={pad.left} y1={yS(v)} x2={W - pad.right} y2={yS(v)}
+                stroke="var(--border)" strokeDasharray="4 4" />
+              <text x={pad.left - 8} y={yS(v)} textAnchor="end" dominantBaseline="middle"
+                className={styles.tick}>{fmtAxis(v)}</text>
+            </g>
+          ))}
 
-        {/* Y axis grid lines + labels */}
-        {ticks.map(v => (
-          <g key={v}>
+          {showZero && (
+            <line x1={pad.left} y1={zeroY} x2={W - pad.right} y2={zeroY}
+              stroke="var(--text-muted)" strokeWidth="1" />
+          )}
+
+          <line x1={pad.left} y1={pad.top} x2={pad.left} y2={H - pad.bottom}
+            stroke="var(--border)" />
+
+          {/* X labels */}
+          {xIndices.map(i => (
+            <text key={data[i].year} x={xS(i)} y={H - pad.bottom + 16}
+              textAnchor="middle" className={styles.tick}>{data[i].year}</text>
+          ))}
+
+          {/* Data lines — liabilities first, net worth on top */}
+          {LINES.slice().reverse().map(l => (
+            <path key={l.key} d={linePath(l.key)} fill="none"
+              style={{ stroke: l.color }}
+              strokeWidth={l.key === 'netWorth' ? 2.8 : 2}
+              strokeLinejoin="round" strokeLinecap="round" />
+          ))}
+
+          {/* Hover indicator line */}
+          {hover && (
             <line
-              x1={pad.left} y1={yS(v)} x2={W - pad.right} y2={yS(v)}
-              stroke="var(--border)" strokeDasharray="4 4"
+              x1={xS(hover.idx)} y1={pad.top}
+              x2={xS(hover.idx)} y2={H - pad.bottom}
+              stroke="var(--text-muted)" strokeWidth="1" strokeDasharray="3 3"
             />
-            <text
-              x={pad.left - 8} y={yS(v)}
-              textAnchor="end" dominantBaseline="middle"
-              className={styles.tick}
-            >
-              {fmtAxis(v)}
-            </text>
-          </g>
-        ))}
+          )}
 
-        {/* Zero line (when chart spans negative values) */}
-        {showZero && (
-          <line
-            x1={pad.left} y1={zeroY} x2={W - pad.right} y2={zeroY}
-            stroke="var(--text-muted)" strokeWidth="1"
+          {/* Transparent overlay — captures mouse events across full chart area */}
+          <rect
+            x={pad.left} y={pad.top} width={iW} height={iH}
+            fill="transparent"
+            onMouseMove={handleMouseMove}
           />
-        )}
 
-        {/* Left axis border */}
-        <line
-          x1={pad.left} y1={pad.top} x2={pad.left} y2={H - pad.bottom}
-          stroke="var(--border)"
-        />
+          {/* Dots on each line at hover position (drawn after rect to appear on top) */}
+          {hover && LINES.map(l => (
+            <circle key={l.key}
+              cx={xS(hover.idx)} cy={yS(data[hover.idx][l.key])}
+              r="4" style={{ fill: l.color }} stroke="var(--bg-surface)" strokeWidth="2"
+            />
+          ))}
+        </svg>
 
-        {/* X axis labels */}
-        {xIndices.map(i => (
-          <text
-            key={data[i].year}
-            x={xS(i)} y={H - pad.bottom + 16}
-            textAnchor="middle"
-            className={styles.tick}
+        {/* Tooltip */}
+        {hover && (
+          <div
+            className={styles.tooltip}
+            style={tipOnLeft
+              ? { right: `calc(${(1 - hover.pct) * 100}% + 14px)` }
+              : { left: `calc(${hover.pct * 100}% + 14px)` }
+            }
           >
-            {data[i].year}
-          </text>
-        ))}
-
-        {/* Data lines — liabilities first so net worth draws on top */}
-        {LINES.slice().reverse().map(l => (
-          <path
-            key={l.key}
-            d={linePath(l.key)}
-            fill="none"
-            style={{ stroke: l.color }}
-            strokeWidth={l.key === 'netWorth' ? 2.8 : 2}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        ))}
-      </svg>
+            <div className={styles.tooltipYear}>{data[hover.idx].year}</div>
+            <div className={styles.tooltipRow}>
+              <span className={styles.tooltipLabel}>Projected Fund</span>
+              <span className={styles.tooltipVal} style={{ color: 'var(--accent-light)' }}>
+                {fmtUsd(data[hover.idx].netWorth)}
+              </span>
+            </div>
+            {retirementGoal && (
+              <div className={styles.tooltipRow}>
+                <span className={styles.tooltipLabel}>Retirement Goal</span>
+                <span className={styles.tooltipVal}>{fmtUsd(retirementGoal.target_usd)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

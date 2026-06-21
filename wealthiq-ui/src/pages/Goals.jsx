@@ -1,142 +1,102 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { CURRENCIES } from '../utils/currency'
-import GoalProgress from '../components/GoalProgress'
+import { CURRENCIES, fmtUsd, fmtOrig } from '../utils/currency'
 import styles from './Page.module.css'
 
-const BLANK = { name: '', currency: 'USD', target: '', deadline: '' }
-
 export default function Goals() {
-  const [goals, setGoals]     = useState([])
-  const [loading, setLoading] = useState(true)
-  const [editId, setEditId]   = useState(null)
-  const [form, setForm]       = useState({})
-  const [adding, setAdding]   = useState(false)
-  const [addForm, setAddForm] = useState(BLANK)
+  const [goal, setGoal]       = useState(null)
+  const [loaded, setLoaded]   = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [form, setForm]       = useState({ target: '', currency: 'INR', deadline: '' })
   const [error, setError]     = useState('')
 
   useEffect(() => {
-    api.getGoals().then(setGoals).finally(() => setLoading(false))
+    api.getGoals().then(goals => {
+      const g = goals[0] ?? null
+      setGoal(g)
+      if (!g) setEditing(true)
+    }).finally(() => setLoaded(true))
   }, [])
 
-  const startEdit = (g) => {
-    setAdding(false)
-    setError('')
-    setEditId(g.id)
-    setForm({ name: g.name, currency: g.currency, target: g.target, deadline: g.deadline })
+  const openEdit = () => {
+    setForm({ target: goal.target, currency: goal.currency, deadline: goal.deadline })
+    setError(''); setEditing(true)
   }
 
-  const cancelEdit = () => { setEditId(null); setError('') }
-
-  const saveEdit = async (id) => {
-    if (!form.name || !form.target) { setError('Name and Target are required.'); return }
+  const save = async () => {
+    if (!form.target || !form.deadline) { setError('Target amount and deadline are required.'); return }
     setError('')
-    const updated = await api.updateGoal(id, {
-      name: form.name,
-      currency: form.currency,
+    const payload = {
       target: parseFloat(form.target),
+      currency: form.currency,
       deadline: form.deadline,
-    })
-    setGoals(goals.map(g => g.id === id ? updated : g))
-    setEditId(null)
+    }
+    if (goal) {
+      setGoal(await api.updateGoal(goal.id, payload))
+    } else {
+      setGoal(await api.createGoal({ name: 'Retirement Fund', ...payload }))
+    }
+    setEditing(false)
   }
 
-  const handleDelete = async (id) => {
-    await api.deleteGoal(id)
-    setGoals(goals.filter(g => g.id !== id))
-  }
+  const f = key => ({
+    value: form[key] ?? '',
+    onChange: e => setForm(p => ({ ...p, [key]: e.target.value })),
+  })
 
-  const handleAdd = async () => {
-    if (!addForm.name || !addForm.target) { setError('Name and Target are required.'); return }
-    setError('')
-    const created = await api.createGoal({
-      name: addForm.name,
-      currency: addForm.currency,
-      target: parseFloat(addForm.target),
-      deadline: addForm.deadline,
-    })
-    setGoals([...goals, created])
-    setAdding(false)
-    setAddForm(BLANK)
-  }
-
-  if (loading) return <div className={styles.state}>Loading...</div>
+  if (!loaded) return <div className={styles.state}>Loading...</div>
 
   return (
     <main className={styles.page}>
       <div className={styles.goalPageHeader}>
-        <h1 className={styles.pageTitle} style={{ marginBottom: 0 }}>Financial Goals</h1>
-        <button className={styles.btnAdd} onClick={() => { setAdding(true); setEditId(null); setError('') }}>
-          + Add Goal
-        </button>
+        <h1 className={styles.pageTitle} style={{ margin: 0 }}>Retirement Fund</h1>
+        {!editing && goal && (
+          <button className={styles.btnAdd} onClick={openEdit}>Edit Goal</button>
+        )}
       </div>
 
       {error && <p className={styles.formError}>{error}</p>}
 
-      {adding && (
+      {editing && (
         <div className={styles.goalForm}>
-          <p className={styles.formTitle}>New Goal</p>
-          <GoalFormFields form={addForm} onChange={setAddForm} />
+          <p className={styles.formTitle}>{goal ? 'Edit' : 'Set'} Retirement Goal</p>
+          <div className={styles.formGrid}>
+            <label className={styles.formLabel}>Target Amount *
+              <input className={styles.editInput} type="number" placeholder="165000000" {...f('target')} />
+            </label>
+            <label className={styles.formLabel}>Currency
+              <select className={styles.editSelect} {...f('currency')}>
+                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </label>
+            <label className={styles.formLabel}>Target Year
+              <input className={styles.editInput} placeholder="Dec 2045" {...f('deadline')} />
+            </label>
+          </div>
           <div className={styles.formActions}>
-            <button className={styles.btnSave}   onClick={handleAdd}>Save</button>
-            <button className={styles.btnCancel} onClick={() => { setAdding(false); setError('') }}>Cancel</button>
+            <button className={styles.btnSave} onClick={save}>Save</button>
+            {goal && (
+              <button className={styles.btnCancel}
+                onClick={() => { setEditing(false); setError('') }}>Cancel</button>
+            )}
           </div>
         </div>
       )}
 
-      {goals.map(g => editId === g.id ? (
-        <div key={g.id} className={styles.goalForm}>
-          <p className={styles.formTitle}>Edit Goal</p>
-          <GoalFormFields form={form} onChange={setForm} />
-          <div className={styles.formActions}>
-            <button className={styles.btnSave}   onClick={() => saveEdit(g.id)}>Save</button>
-            <button className={styles.btnCancel} onClick={cancelEdit}>Cancel</button>
-            <button className={styles.btnDelete} onClick={() => handleDelete(g.id)}>Delete</button>
+      {!editing && goal && (
+        <div className={styles.retirementCard}>
+          <div className={styles.retirementTarget}>
+            <span className={styles.retirementLabel}>Target Corpus</span>
+            <span className={styles.retirementAmount}>{fmtUsd(goal.target_usd)}</span>
+            {goal.currency !== 'USD' && (
+              <span className={styles.retirementOrig}>{fmtOrig(goal.target, goal.currency)}</span>
+            )}
+          </div>
+          <div className={styles.retirementMeta}>
+            <span className={styles.retirementPill}>{goal.deadline}</span>
           </div>
         </div>
-      ) : (
-        <div key={g.id} className={styles.goalWrap}>
-          <GoalProgress
-            name={g.name}
-            currency={g.currency}
-            target={g.target}
-            targetUsd={g.target_usd}
-            deadline={g.deadline}
-          />
-          <div className={styles.goalActions}>
-            <button className={styles.btnEdit} onClick={() => startEdit(g)}>✎ Edit</button>
-          </div>
-        </div>
-      ))}
+      )}
     </main>
-  )
-}
-
-function GoalFormFields({ form, onChange }) {
-  const field = (key) => ({
-    value: form[key] ?? '',
-    onChange: e => onChange(f => ({ ...f, [key]: e.target.value })),
-  })
-  return (
-    <div className={styles.formGrid}>
-      <label className={styles.formLabel}>
-        Goal Name *
-        <input className={styles.editInput} placeholder="e.g. Emergency Fund" {...field('name')} />
-      </label>
-      <label className={styles.formLabel}>
-        Currency
-        <select className={styles.editSelect} {...field('currency')}>
-          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </label>
-      <label className={styles.formLabel}>
-        Target Amount *
-        <input className={styles.editInput} type="number" placeholder="5000000" {...field('target')} />
-      </label>
-      <label className={styles.formLabel}>
-        Timeline
-        <input className={styles.editInput} placeholder="Dec 2028" {...field('deadline')} />
-      </label>
-    </div>
   )
 }

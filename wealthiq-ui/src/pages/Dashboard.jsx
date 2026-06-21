@@ -1,5 +1,4 @@
 import StatCard from '../components/StatCard'
-import GrowthChart from '../components/GrowthChart'
 import GoalProgress from '../components/GoalProgress'
 import WealthProjectionChart from '../components/WealthProjectionChart'
 import { usePortfolio, useGoals, useHoldings, useLiabilities } from '../hooks/usePortfolio'
@@ -16,11 +15,12 @@ export default function Dashboard() {
   if (loading) return <div className={styles.state}>Loading...</div>
   if (error)   return <div className={styles.state}>Failed to load data.</div>
 
-  const { summary, growth } = data
+  const { summary } = data
 
-  const currentYear  = new Date().getFullYear()
-  const horizonYear  = getHorizon(holdings, liabilities)
-  const projData     = projectWealth(holdings, liabilities, currentYear, horizonYear)
+  const currentYear    = new Date().getFullYear()
+  const horizonYear    = getHorizon(holdings, liabilities)
+  const projData       = projectWealth(holdings, liabilities, currentYear, horizonYear)
+  const retirementGoal = goals.length > 0 ? goals[0] : null
 
   return (
     <main className={styles.page}>
@@ -53,15 +53,8 @@ export default function Dashboard() {
       </div>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Financial Growth</h2>
-        <div className={styles.chartCard}>
-          <GrowthChart data={growth} />
-        </div>
-      </section>
-
-      <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Wealth Trajectory</h2>
-        <WealthProjectionChart data={projData} />
+        <WealthProjectionChart data={projData} retirementGoal={retirementGoal} />
       </section>
 
       <section className={styles.section}>

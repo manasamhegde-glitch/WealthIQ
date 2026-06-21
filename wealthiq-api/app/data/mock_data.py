@@ -87,7 +87,5 @@ LIABILITIES: list[dict] = [
 ]
 
 GOALS: list[dict] = [
-    {"id": "g1", "name": "Emergency Fund",    "currency": "INR", "target": 5_000_000,   "deadline": "Dec 2026"},
-    {"id": "g2", "name": "Home Down Payment", "currency": "INR", "target": 12_000_000,  "deadline": "Dec 2028"},
-    {"id": "g3", "name": "Retirement Corpus", "currency": "INR", "target": 165_000_000, "deadline": "Dec 2045"},
+    {"id": "g1", "name": "Retirement Fund", "currency": "INR", "target": 165_000_000, "deadline": "Dec 2045"},
 ]
