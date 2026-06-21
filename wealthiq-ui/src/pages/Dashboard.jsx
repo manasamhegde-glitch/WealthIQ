@@ -1,9 +1,8 @@
 import StatCard from '../components/StatCard'
-import GoalProgress from '../components/GoalProgress'
 import WealthProjectionChart from '../components/WealthProjectionChart'
 import { usePortfolio, useGoals, useHoldings, useLiabilities } from '../hooks/usePortfolio'
 import { fmtUsd, fmtOrig } from '../utils/currency'
-import { projectWealth, getHorizon } from '../utils/projection'
+import { projectWealth, getHorizon, parseYear } from '../utils/projection'
 import styles from './Page.module.css'
 
 export default function Dashboard() {
@@ -17,10 +16,30 @@ export default function Dashboard() {
 
   const { summary } = data
 
-  const currentYear    = new Date().getFullYear()
-  const horizonYear    = getHorizon(holdings, liabilities)
-  const projData       = projectWealth(holdings, liabilities, currentYear, horizonYear)
+  // Dynamic financials — computed from live holdings / liabilities
+  const totalAssets    = holdings.reduce((s, h) => s + h.value_usd, 0)
+  const totalLiab      = liabilities.reduce((s, l) => s + l.balance_usd, 0)
+  const netWorth       = totalAssets - totalLiab
+  const weightedReturn = holdings.length > 0
+    ? holdings.reduce((s, h) => s + h.change * h.allocation / 100, 0)
+    : 0
+
   const retirementGoal = goals.length > 0 ? goals[0] : null
+  const currentYear    = new Date().getFullYear()
+  const retireYear     = retirementGoal ? (parseYear(retirementGoal.deadline) ?? currentYear + 30) : currentYear + 30
+  const horizonYear    = Math.max(getHorizon(holdings, liabilities), retireYear + 2)
+  const projData       = projectWealth(holdings, liabilities, currentYear, horizonYear)
+
+  // Retirement summary stats
+  let retireStats = null
+  if (retirementGoal) {
+    const projPt    = projData.find(d => d.year === retireYear)
+    const projected = Math.max(0, projPt?.netWorth ?? 0)
+    const required  = retirementGoal.target_usd
+    const gap       = Math.max(0, required - projected)
+    const pct       = required > 0 ? Math.min(100, projected / required * 100) : 0
+    retireStats     = { projected, required, gap, pct }
+  }
 
   return (
     <main className={styles.page}>
@@ -34,29 +53,77 @@ export default function Dashboard() {
 
       <div className={styles.cards}>
         <StatCard
-          label="Current Funds"
-          value={`$${summary.current_funds.toLocaleString()}`}
-          sub={`▲ +$${summary.monthly_gain.toLocaleString()} this month`}
+          label="Total Assets"
+          value={fmtUsd(totalAssets)}
+          sub={`${holdings.length} holding${holdings.length !== 1 ? 's' : ''}`}
           trend="up"
         />
         <StatCard
-          label="Total Growth"
-          value={`+${summary.total_growth_pct}%`}
-          sub={`Since ${summary.growth_since}`}
-          trend="up"
+          label="Net Worth"
+          value={(netWorth < 0 ? '−' : '') + fmtUsd(Math.abs(netWorth))}
+          sub={`Liabilities: ${fmtUsd(totalLiab)}`}
+          trend={netWorth >= 0 ? 'up' : 'down'}
         />
         <StatCard
-          label="Monthly Return"
-          value={`+${summary.monthly_return_pct}%`}
-          sub={`Avg last 6 months: ${summary.avg_return_pct}%`}
+          label="Avg Annual Return"
+          value={`${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(1)}%`}
+          sub="weighted across portfolio"
+          trend={weightedReturn >= 0 ? 'up' : 'down'}
         />
       </div>
 
+      {/* ── Retirement Goal Summary ── */}
+      {retireStats && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Retirement Goal</h2>
+          <div className={styles.retireCard}>
+            <div className={styles.retireCardTop}>
+              <span className={styles.retireCardName}>Retirement Fund</span>
+              <span className={styles.retirementPill}>{retirementGoal.deadline}</span>
+            </div>
+            <div className={styles.retireStats}>
+              <div className={styles.retireStat}>
+                <span className={styles.retireStatLabel}>Corpus Required</span>
+                <span className={`${styles.retireStatValue} ${styles.down}`}>
+                  {fmtUsd(retireStats.required)}
+                </span>
+                {retirementGoal.currency !== 'USD' && (
+                  <span className={styles.retireStatSub}>
+                    {fmtOrig(retirementGoal.target, retirementGoal.currency)}
+                  </span>
+                )}
+              </div>
+              <div className={styles.retireDivider} />
+              <div className={styles.retireStat}>
+                <span className={styles.retireStatLabel}>Projected at {retireYear}</span>
+                <span className={`${styles.retireStatValue} ${retireStats.projected >= retireStats.required ? styles.up : ''}`}>
+                  {fmtUsd(retireStats.projected)}
+                </span>
+                <span className={styles.retireStatSub}>on current trajectory</span>
+              </div>
+              <div className={styles.retireDivider} />
+              <div className={styles.retireStat}>
+                <span className={styles.retireStatLabel}>Gap to Bridge</span>
+                <span className={`${styles.retireStatValue} ${retireStats.gap === 0 ? styles.up : styles.down}`}>
+                  {retireStats.gap === 0 ? 'On Track' : fmtUsd(retireStats.gap)}
+                </span>
+                <span className={styles.retireStatSub}>{retireStats.pct.toFixed(1)}% funded</span>
+              </div>
+            </div>
+            <div className={styles.retireProgress}>
+              <div className={styles.retireProgressFill} style={{ width: `${retireStats.pct}%` }} />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Wealth Trajectory ── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Wealth Trajectory</h2>
         <WealthProjectionChart data={projData} retirementGoal={retirementGoal} />
       </section>
 
+      {/* ── Assets ── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Assets</h2>
         <div className={styles.table}>
@@ -96,20 +163,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Goals</h2>
-        {goals.map(g => (
-          <GoalProgress
-            key={g.id}
-            name={g.name}
-            currency={g.currency}
-            target={g.target}
-            targetUsd={g.target_usd}
-            deadline={g.deadline}
-          />
-        ))}
       </section>
     </main>
   )

@@ -10,9 +10,11 @@ SAVINGS_TYPES = [
 class PortfolioSummary(BaseModel):
     user_name: str
     initials: str
-    current_funds: float
+    current_funds: float        # total assets in USD
+    net_worth: float            # assets minus liabilities
+    total_liabilities: float    # total liabilities in USD
     monthly_gain: float
-    total_growth_pct: float
+    total_growth_pct: float     # weighted avg annual return %
     growth_since: str
     monthly_return_pct: float
     avg_return_pct: float
@@ -109,16 +111,31 @@ class Goal(BaseModel):
     id: str
     name: str
     currency: str
-    target: float       # original currency
+    target: float       # PVGA-computed corpus (original currency)
     target_usd: float   # computed on server
-    deadline: str
+    deadline: str       # "Dec YYYY" derived from ages
+    # PVGA inputs (stored so form can be re-populated)
+    monthly_expense: float = 0.0
+    current_age: int = 0
+    retirement_age: int = 60
+    life_expectancy: int = 85
+    inflation_rate: float = 6.0
+    pre_return: float = 12.0
+    post_return: float = 7.0
 
 
 class GoalCreate(BaseModel):
     name: str
-    currency: str = "USD"
+    currency: str = "INR"
     target: float
     deadline: str
+    monthly_expense: float = 0.0
+    current_age: int = 0
+    retirement_age: int = 60
+    life_expectancy: int = 85
+    inflation_rate: float = 6.0
+    pre_return: float = 12.0
+    post_return: float = 7.0
 
 
 class GoalUpdate(BaseModel):
@@ -126,3 +143,10 @@ class GoalUpdate(BaseModel):
     currency: Optional[str] = None
     target: Optional[float] = None
     deadline: Optional[str] = None
+    monthly_expense: Optional[float] = None
+    current_age: Optional[int] = None
+    retirement_age: Optional[int] = None
+    life_expectancy: Optional[int] = None
+    inflation_rate: Optional[float] = None
+    pre_return: Optional[float] = None
+    post_return: Optional[float] = None

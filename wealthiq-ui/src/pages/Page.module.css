@@ -418,14 +418,14 @@
   font-weight: 400;
 }
 
-/* ── Retirement Goal card ── */
+/* ── Retirement Goal card (Goals page — view mode) ── */
 .retirementCard {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 32px 36px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
@@ -458,7 +458,9 @@
 
 .retirementMeta {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
 }
 
 .retirementPill {
@@ -469,6 +471,126 @@
   padding: 6px 16px;
   font-size: 14px;
   font-weight: 600;
+}
+
+.retirementSubtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ── Goals form: live corpus preview ── */
+.corpusPreview {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-raised));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
+}
+
+.corpusPreviewLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent-light);
+  margin-bottom: 6px;
+}
+
+.corpusPreviewAmount {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.corpusPreviewSub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.corpusPreviewEmpty {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+/* ── Dashboard: Retirement Goal summary card ── */
+.retireCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.retireCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.retireCardName {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.retireStats {
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+}
+
+.retireStat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.retireStatLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+}
+
+.retireStatValue {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.retireStatSub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.retireDivider {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+  margin: 0 24px;
+  flex-shrink: 0;
+}
+
+.retireProgress {
+  height: 5px;
+  background: var(--bg-raised);
+}
+
+.retireProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  transition: width 0.5s ease;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Periodic contribution sub-line below asset name */

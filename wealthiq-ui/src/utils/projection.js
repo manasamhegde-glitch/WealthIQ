@@ -1,4 +1,4 @@
-function parseYear(dateStr) {
+export function parseYear(dateStr) {
   if (!dateStr) return null
   const m = dateStr.match(/\d{4}/)
   return m ? parseInt(m[0]) : null

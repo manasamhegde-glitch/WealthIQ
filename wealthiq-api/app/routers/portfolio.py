@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, HTTPException
 from app.models.schemas import PortfolioSummary, GrowthPoint, Holding, HoldingCreate, HoldingUpdate
-from app.data.mock_data import SUMMARY, GROWTH, HOLDINGS, CURRENCIES, enrich_holdings
+from app.data.mock_data import SUMMARY, GROWTH, HOLDINGS, LIABILITIES, CURRENCIES, enrich_holdings, enrich_liability
 
 router = APIRouter()
 
@@ -19,7 +19,28 @@ def get_currencies():
 
 @router.get("/summary", response_model=PortfolioSummary)
 def get_summary():
-    return SUMMARY
+    enriched = enrich_holdings(HOLDINGS)
+    total_assets = sum(h["value_usd"] for h in enriched)
+    total_liab   = sum(enrich_liability(l)["balance_usd"] for l in LIABILITIES)
+    net_worth    = total_assets - total_liab
+
+    # Portfolio-level weighted average return (by allocation %)
+    weighted_return = round(
+        sum(h["change"] * h["allocation"] / 100 for h in enriched), 1
+    ) if total_assets > 0 else 0.0
+
+    return PortfolioSummary(
+        user_name=SUMMARY.user_name,
+        initials=SUMMARY.initials,
+        current_funds=round(total_assets, 2),
+        net_worth=round(net_worth, 2),
+        total_liabilities=round(total_liab, 2),
+        monthly_gain=round(total_assets * weighted_return / 100 / 12, 2),
+        total_growth_pct=weighted_return,
+        growth_since=SUMMARY.growth_since,
+        monthly_return_pct=round(weighted_return / 12, 2),
+        avg_return_pct=weighted_return,
+    )
 
 
 @router.get("/growth", response_model=list[GrowthPoint])

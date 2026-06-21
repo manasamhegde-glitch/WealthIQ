@@ -48,12 +48,14 @@ def enrich_goal(g: dict) -> dict:
 SUMMARY = PortfolioSummary(
     user_name="Manasa Hegde",
     initials="MH",
-    current_funds=42850,
-    monthly_gain=1240,
-    total_growth_pct=18.4,
+    current_funds=0,
+    net_worth=0,
+    total_liabilities=0,
+    monthly_gain=0,
+    total_growth_pct=0,
     growth_since="Jan 2026",
-    monthly_return_pct=2.9,
-    avg_return_pct=2.4,
+    monthly_return_pct=0,
+    avg_return_pct=0,
 )
 
 GROWTH: list[GrowthPoint] = [
@@ -87,5 +89,20 @@ LIABILITIES: list[dict] = [
 ]
 
 GOALS: list[dict] = [
-    {"id": "g1", "name": "Retirement Fund", "currency": "INR", "target": 165_000_000, "deadline": "Dec 2045"},
+    {
+        "id": "g1",
+        "name": "Retirement Fund",
+        "currency": "INR",
+        # PVGA-computed corpus: ₹50K/mo expenses, retire at 60 from age 30,
+        # 25 yrs in retirement, 6% inflation, 7% post-retirement return ≈ ₹7.2 Cr
+        "target": 72_000_000,
+        "deadline": "Dec 2056",
+        "monthly_expense": 50_000,
+        "current_age": 30,
+        "retirement_age": 60,
+        "life_expectancy": 85,
+        "inflation_rate": 6.0,
+        "pre_return": 12.0,
+        "post_return": 7.0,
+    }
 ]
