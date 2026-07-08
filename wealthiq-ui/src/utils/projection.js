@@ -27,7 +27,9 @@ export function getHorizon(holdings, liabilities) {
   return Math.max(cur + 15, ...(years.length ? years : [cur + 15]))
 }
 
-export function projectWealth(holdings, liabilities, currentYear, horizonYear) {
+export function projectWealth(holdings, liabilities, currentYear, horizonYear, inflationRate = 0) {
+  const iRate = (inflationRate || 0) / 100   // e.g. 6 → 0.06
+
   return Array.from({ length: horizonYear - currentYear + 1 }, (_, t) => {
     const year = currentYear + t
 
@@ -81,11 +83,18 @@ export function projectWealth(holdings, liabilities, currentYear, horizonYear) {
       return sum + Math.max(0, remaining)
     }, 0)
 
+    const netWorth = assets - liabs
+    // Fisher deflation: real = nominal / (1 + i)^t — purchasing power in today's terms
+    const realNetWorth = iRate > 0 && t > 0
+      ? Math.round(netWorth / Math.pow(1 + iRate, t))
+      : Math.round(netWorth)
+
     return {
       year,
       assets: Math.round(assets),
       liabilities: Math.round(liabs),
-      netWorth: Math.round(assets - liabs),
+      netWorth: Math.round(netWorth),
+      realNetWorth,
     }
   })
 }

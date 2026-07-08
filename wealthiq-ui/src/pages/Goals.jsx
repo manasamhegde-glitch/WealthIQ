@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { CURRENCIES, fmtUsd, fmtOrig } from '../utils/currency'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { CURRENCIES, fmtCurrency, fmtOrig, convertCurrency } from '../utils/currency'
 import { calcCorpus, annualExpenseAtRetirement, calcDeadline } from '../utils/retirement'
 import styles from './Page.module.css'
 
@@ -20,6 +21,7 @@ export default function Goals() {
   const [editing, setEditing] = useState(false)
   const [form, setForm]       = useState(DEFAULT_FORM)
   const [error, setError]     = useState('')
+  const { currency }           = useCurrency()
 
   useEffect(() => {
     api.getGoals().then(goals => {
@@ -159,16 +161,28 @@ export default function Goals() {
         <div className={styles.retirementCard}>
           <div className={styles.retirementTarget}>
             <span className={styles.retirementLabel}>Target Corpus</span>
-            <span className={styles.retirementAmount}>{fmtOrig(goal.target, goal.currency)}</span>
-            {goal.currency !== 'USD' && (
-              <span className={styles.retirementOrig}>{fmtUsd(goal.target_usd)}</span>
+            <span className={styles.retirementAmount}>
+              {fmtCurrency(
+                convertCurrency(
+                  goal.target_usd ?? goal.target,
+                  goal.target_usd ? 'USD' : goal.currency,
+                  currency
+                ),
+                currency
+              )}
+            </span>
+            {goal.currency !== currency && (
+              <span className={styles.retirementOrig}>{fmtOrig(goal.target, goal.currency)}</span>
             )}
           </div>
           <div className={styles.retirementMeta}>
             <span className={styles.retirementPill}>{goal.deadline}</span>
             {goal.monthly_expense > 0 && (
               <span className={styles.retirementSubtext}>
-                {fmtOrig(goal.monthly_expense, goal.currency)}/mo expenses
+                {fmtCurrency(convertCurrency(goal.monthly_expense, goal.currency, currency), currency)}/mo expenses
+                {goal.currency !== currency && (
+                  <> ({fmtOrig(goal.monthly_expense, goal.currency)})</>
+                )}
                 &nbsp;·&nbsp;{goal.inflation_rate}% inflation
                 &nbsp;·&nbsp;{goal.post_return}% post-retirement return
               </span>

@@ -5,12 +5,6 @@ EXCHANGE_RATES: dict[str, float] = {
     "USD": 1.0,
     "INR": 0.012,
     "EUR": 1.08,
-    "GBP": 1.27,
-    "JPY": 0.0067,
-    "SGD": 0.74,
-    "AED": 0.27,
-    "CAD": 0.74,
-    "AUD": 0.65,
 }
 
 CURRENCIES = list(EXCHANGE_RATES.keys())

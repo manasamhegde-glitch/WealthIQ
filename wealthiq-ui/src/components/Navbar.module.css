@@ -32,8 +32,19 @@
 
 .active { background: var(--bg-raised); color: var(--text-primary); }
 
-.user {
+.currencySelect {
   margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 0 10px;
+  height: 34px;
+  font-size: 13px;
+}
+
+.user {
+  margin-left: 16px;
   width: 34px; height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--accent-light));

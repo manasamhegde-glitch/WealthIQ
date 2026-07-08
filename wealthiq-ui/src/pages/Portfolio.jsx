@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { CURRENCIES, fmtUsd, fmtOrig } from '../utils/currency'
+import { useCurrency } from '../contexts/CurrencyContext'
+import { CURRENCIES, fmtCurrency, fmtOrig, convertCurrency } from '../utils/currency'
 import { holdingXIRR } from '../utils/xirr'
 import styles from './Page.module.css'
 
@@ -35,6 +36,7 @@ export default function Portfolio() {
   const [addLiabForm, setAddLiabForm] = useState(BLANK_LIAB)
 
   const [error, setError] = useState('')
+  const { currency } = useCurrency()
 
   useEffect(() => {
     Promise.all([api.getHoldings(), api.getLiabilities()])
@@ -43,8 +45,8 @@ export default function Portfolio() {
   }, [])
 
   // ── derived totals ──────────────────────────────────────────────────────────
-  const totalAssets = holdings.reduce((s, h) => s + h.value_usd, 0)
-  const totalLiab   = liabilities.reduce((s, l) => s + l.balance_usd, 0)
+  const totalAssets = holdings.reduce((s, h) => s + convertCurrency(h.value, h.currency, currency), 0)
+  const totalLiab   = liabilities.reduce((s, l) => s + convertCurrency(l.balance, l.currency, currency), 0)
   const netWorth    = totalAssets - totalLiab
 
   // XIRR per holding (computed from cost_basis + SIPs + current value)
@@ -163,18 +165,18 @@ export default function Portfolio() {
       <div className={styles.netBar}>
         <div className={styles.netCard}>
           <span className={styles.netLabel}>Total Assets</span>
-          <span className={`${styles.netValue} ${styles.up}`}>{fmtUsd(totalAssets)}</span>
+          <span className={`${styles.netValue} ${styles.up}`}>{fmtCurrency(totalAssets, currency)}</span>
         </div>
         <div className={styles.netDivider} />
         <div className={styles.netCard}>
           <span className={styles.netLabel}>Total Liabilities</span>
-          <span className={`${styles.netValue} ${styles.down}`}>{fmtUsd(totalLiab)}</span>
+          <span className={`${styles.netValue} ${styles.down}`}>{fmtCurrency(totalLiab, currency)}</span>
         </div>
         <div className={styles.netDivider} />
         <div className={styles.netCard}>
           <span className={styles.netLabel}>Net Worth</span>
           <span className={`${styles.netValue} ${netWorth >= 0 ? styles.up : styles.down}`}>
-            {netWorth < 0 ? '−' : ''}{fmtUsd(Math.abs(netWorth))}
+            {netWorth < 0 ? '−' : ''}{fmtCurrency(Math.abs(netWorth), currency)}
           </span>
         </div>
       </div>
@@ -205,7 +207,7 @@ export default function Portfolio() {
 
       <div className={styles.table}>
         <div className={`${styles.row} ${styles.rowWide} ${styles.thead}`}>
-          <span>Asset</span><span>Type</span><span>Value (USD)</span>
+          <span>Asset</span><span>Type</span><span>Value ({currency})</span>
           <span>Change</span><span>Allocation</span><span />
         </div>
 
@@ -270,14 +272,14 @@ export default function Portfolio() {
               )}
               {h.contribution > 0 && h.contribution_freq !== 'None' && (
                 <span className={styles.contribLine}>
-                  {fmtOrig(h.contribution, h.currency)}/{h.contribution_freq === 'Monthly' ? 'mo' : 'yr'}
+                  {fmtCurrency(convertCurrency(h.contribution, h.currency, currency), currency)}/{h.contribution_freq === 'Monthly' ? 'mo' : 'yr'}
                 </span>
               )}
             </span>
             <span><span className={styles.badge}>{h.type}</span></span>
             <span>
-              {fmtUsd(h.value_usd)}
-              {h.currency !== 'USD' && <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>}
+              {fmtCurrency(convertCurrency(h.value, h.currency, currency), currency)}
+              {h.currency !== currency && <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>}
             </span>
             <span>
               <span className={h.change >= 0 ? styles.up : styles.down}>
@@ -323,7 +325,7 @@ export default function Portfolio() {
 
       <div className={styles.table}>
         <div className={`${styles.row} ${styles.rowLiab} ${styles.thead}`}>
-          <span>Name</span><span>Type</span><span>Balance (USD)</span>
+          <span>Name</span><span>Type</span><span>Balance ({currency})</span>
           <span>Rate</span><span>Period</span><span />
         </div>
         {liabilities.map(l => liabEditId === l.id ? (
@@ -353,8 +355,8 @@ export default function Portfolio() {
             <span className={styles.assetName}>{l.name}</span>
             <span><span className={`${styles.badge} ${styles.liabBadge}`}>{l.type}</span></span>
             <span>
-              <span className={styles.down}>{fmtUsd(l.balance_usd)}</span>
-              {l.currency !== 'USD' && <span className={styles.origAmount}>{fmtOrig(l.balance, l.currency)}</span>}
+              <span className={styles.down}>{fmtCurrency(convertCurrency(l.balance, l.currency, currency), currency)}</span>
+              {l.currency !== currency && <span className={styles.origAmount}>{fmtOrig(l.balance, l.currency)}</span>}
             </span>
             <span className={styles.rateCell}>{l.interest_rate}%</span>
             <span className={styles.periodCell}>

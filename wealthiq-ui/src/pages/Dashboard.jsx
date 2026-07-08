@@ -1,9 +1,9 @@
-import StatCard from '../components/StatCard'
+import { Link } from 'react-router-dom'
 import WealthProjectionChart from '../components/WealthProjectionChart'
 import { usePortfolio, useGoals, useHoldings, useLiabilities } from '../hooks/usePortfolio'
-import { fmtUsd, fmtOrig } from '../utils/currency'
+import { fmtCurrency, toCurrency, convertCurrency } from '../utils/currency'
 import { projectWealth, getHorizon, parseYear } from '../utils/projection'
-import { holdingXIRR } from '../utils/xirr'
+import { useCurrency } from '../contexts/CurrencyContext'
 import styles from './Page.module.css'
 
 export default function Dashboard() {
@@ -11,165 +11,165 @@ export default function Dashboard() {
   const { goals }                = useGoals()
   const { holdings }             = useHoldings()
   const { liabilities }          = useLiabilities()
+  const { currency }             = useCurrency()
 
   if (loading) return <div className={styles.state}>Loading...</div>
   if (error)   return <div className={styles.state}>Failed to load data.</div>
 
   const { summary } = data
 
-  // Dynamic financials — computed from live holdings / liabilities
-  const totalAssets    = holdings.reduce((s, h) => s + h.value_usd, 0)
-  const totalLiab      = liabilities.reduce((s, l) => s + l.balance_usd, 0)
-  const netWorth       = totalAssets - totalLiab
-  const weightedReturn = holdings.length > 0
-    ? holdings.reduce((s, h) => s + h.change * h.allocation / 100, 0)
+  // ── financials ──────────────────────────────────────────────────────────────
+  const normalizedHoldings = holdings.map(h => ({
+    ...h,
+    value_usd: convertCurrency(h.value, h.currency, 'USD'),
+    contribution_usd: convertCurrency(h.contribution ?? 0, h.currency, 'USD'),
+    cost_basis_usd: convertCurrency(h.cost_basis ?? 0, h.currency, 'USD'),
+  }))
+  const normalizedLiabilities = liabilities.map(l => ({
+    ...l,
+    balance_usd: convertCurrency(l.balance, l.currency, 'USD'),
+  }))
+
+  const totalAssetsUsd = normalizedHoldings.reduce((s, h) => s + h.value_usd, 0)
+  const totalLiabUsd   = normalizedLiabilities.reduce((s, l) => s + l.balance_usd, 0)
+  const netWorthUsd    = totalAssetsUsd - totalLiabUsd
+  const totalAssets    = toCurrency(totalAssetsUsd, currency)
+  const totalLiab      = toCurrency(totalLiabUsd, currency)
+  const netWorth       = toCurrency(netWorthUsd, currency)
+  const weightedReturn = normalizedHoldings.length > 0
+    ? normalizedHoldings.reduce((s, h) => s + h.change * h.allocation / 100, 0)
     : 0
 
+  // Estimated 1-day change from annualised return
+  const dailyPct  = weightedReturn / 365
+  const dailyGain = toCurrency(totalAssetsUsd * weightedReturn / 100 / 365, currency)
+
+  // ── projection data ────────────────────────────────────────────────────────
   const retirementGoal = goals.length > 0 ? goals[0] : null
   const currentYear    = new Date().getFullYear()
   const retireYear     = retirementGoal ? (parseYear(retirementGoal.deadline) ?? currentYear + 30) : currentYear + 30
-  const horizonYear    = Math.max(getHorizon(holdings, liabilities), retireYear + 2)
-  const projData       = projectWealth(holdings, liabilities, currentYear, horizonYear)
+  const horizonYear    = Math.max(getHorizon(normalizedHoldings, normalizedLiabilities), retireYear + 2)
+  const inflationRate  = retirementGoal?.inflation_rate ?? 6   // % — used for Fisher deflation
+  const projDataUsd    = projectWealth(normalizedHoldings, normalizedLiabilities, currentYear, horizonYear, inflationRate)
+  const projData       = projDataUsd.map(d => ({
+    ...d,
+    assets: toCurrency(d.assets, currency),
+    liabilities: toCurrency(d.liabilities, currency),
+    netWorth: toCurrency(d.netWorth, currency),
+  }))
 
-  // Retirement summary stats
+  // ── retirement stats ───────────────────────────────────────────────────────
   let retireStats = null
   if (retirementGoal) {
-    const projPt    = projData.find(d => d.year === retireYear)
-    const projected = Math.max(0, projPt?.netWorth ?? 0)
-    const required  = retirementGoal.target_usd
-    const gap       = Math.max(0, required - projected)
-    const pct       = required > 0 ? Math.min(100, projected / required * 100) : 0
-    retireStats     = { projected, required, gap, pct }
+    const projPt         = projData.find(d => d.year === retireYear)
+    const projected      = Math.max(0, projPt?.netWorth ?? 0)
+    const requiredUsd    = retirementGoal.target_usd
+    const required       = toCurrency(requiredUsd, currency)
+    const gap            = Math.max(0, required - projected)
+    const pct            = required > 0 ? Math.min(100, projected / required * 100) : 0
+    retireStats          = { projected, required, gap, pct }
   }
 
   return (
     <main className={styles.page}>
-      <header className={styles.pageHeader}>
+
+      {/* ── Identity header ── */}
+      <header className={styles.dashHeader}>
         <div className={styles.avatar}>{summary.initials}</div>
         <div>
-          <h1 className={styles.name}>{summary.user_name}</h1>
-          <p className={styles.sub}>Personal Finance Dashboard</p>
+          <span className={styles.name}>{summary.user_name}</span>
+          <span className={styles.sub}>Personal Finance</span>
         </div>
       </header>
 
-      <div className={styles.cards}>
-        <StatCard
-          label="Total Assets"
-          value={fmtUsd(totalAssets)}
-          sub={`${holdings.length} holding${holdings.length !== 1 ? 's' : ''}`}
-          trend="up"
-        />
-        <StatCard
-          label="Net Worth"
-          value={(netWorth < 0 ? '−' : '') + fmtUsd(Math.abs(netWorth))}
-          sub={`Liabilities: ${fmtUsd(totalLiab)}`}
-          trend={netWorth >= 0 ? 'up' : 'down'}
-        />
-        <StatCard
-          label="Avg Annual Return"
-          value={`${weightedReturn >= 0 ? '+' : ''}${weightedReturn.toFixed(1)}%`}
-          sub="weighted across portfolio"
-          trend={weightedReturn >= 0 ? 'up' : 'down'}
-        />
-      </div>
+      {/* ── Hero: current net worth + projected subtext ── */}
+      <section className={styles.heroSection}>
+        <div className={styles.heroLabel}>My Networth</div>
+        <div className={`${styles.heroAmount} ${netWorth >= 0 ? styles.up : styles.down}`}>
+          {netWorth < 0 ? '−' : ''}{fmtCurrency(Math.abs(netWorth), currency)}
+        </div>
+        {retireStats && (
+          <div className={styles.heroSub}>
+            Projected by {retireYear}:&nbsp;
+            <strong>{fmtCurrency(retireStats.projected, currency)}</strong>
+          </div>
+        )}
+      </section>
 
-      {/* ── Retirement Goal Summary ── */}
+      {/* ── Wealth Trajectory (area chart) ── */}
+      <section className={styles.section}>
+        <WealthProjectionChart
+          data={projData}
+          retirementGoal={retirementGoal}
+          currency={currency}
+          currentYear={currentYear}
+        />
+      </section>
+
+      {/* ── Retirement Fund card ── */}
       {retireStats && (
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Retirement Goal</h2>
-          <div className={styles.retireCard}>
-            <div className={styles.retireCardTop}>
-              <span className={styles.retireCardName}>Retirement Fund</span>
-              <span className={styles.retirementPill}>{retirementGoal.deadline}</span>
+          <div className={styles.rfCard}>
+            <div className={styles.rfCardHeader}>
+              <div>
+                <span className={styles.rfTitle}>Retirement Fund</span>
+                <span className={styles.rfDeadline}>by {retirementGoal.deadline}</span>
+              </div>
+              <span className={styles.rfPctBadge}>
+                <span className={styles.rfPctDot} />
+                {Math.round(retireStats.pct)}%
+              </span>
             </div>
-            <div className={styles.retireStats}>
-              <div className={styles.retireStat}>
-                <span className={styles.retireStatLabel}>Corpus Required</span>
-                <span className={`${styles.retireStatValue} ${styles.down}`}>
-                  {fmtUsd(retireStats.required)}
-                </span>
-                {retirementGoal.currency !== 'USD' && (
-                  <span className={styles.retireStatSub}>
-                    {fmtOrig(retirementGoal.target, retirementGoal.currency)}
-                  </span>
-                )}
+
+            <div className={styles.rfStats}>
+              <div className={styles.rfStat}>
+                <span className={styles.rfStatLabel}>Goal Amt</span>
+                <span className={styles.rfStatValue}>{fmtCurrency(retireStats.required, currency)}</span>
               </div>
-              <div className={styles.retireDivider} />
-              <div className={styles.retireStat}>
-                <span className={styles.retireStatLabel}>Projected at {retireYear}</span>
-                <span className={`${styles.retireStatValue} ${retireStats.projected >= retireStats.required ? styles.up : ''}`}>
-                  {fmtUsd(retireStats.projected)}
-                </span>
-                <span className={styles.retireStatSub}>on current trajectory</span>
+              <div className={styles.rfDivider} />
+              <div className={styles.rfStat}>
+                <span className={styles.rfStatLabel}>Projected by {retireYear}</span>
+                <span className={styles.rfStatValue}>{fmtCurrency(retireStats.projected, currency)}</span>
               </div>
-              <div className={styles.retireDivider} />
-              <div className={styles.retireStat}>
-                <span className={styles.retireStatLabel}>Gap to Bridge</span>
-                <span className={`${styles.retireStatValue} ${retireStats.gap === 0 ? styles.up : styles.down}`}>
-                  {retireStats.gap === 0 ? 'On Track' : fmtUsd(retireStats.gap)}
+              <div className={styles.rfDivider} />
+              <div className={styles.rfStat}>
+                <span className={styles.rfStatLabel}>Shortfall</span>
+                <span className={`${styles.rfStatValue} ${retireStats.gap === 0 ? styles.up : styles.down}`}>
+                  {retireStats.gap === 0 ? 'On Track' : fmtCurrency(retireStats.gap, currency)}
                 </span>
-                <span className={styles.retireStatSub}>{retireStats.pct.toFixed(1)}% funded</span>
               </div>
             </div>
-            <div className={styles.retireProgress}>
-              <div className={styles.retireProgressFill} style={{ width: `${retireStats.pct}%` }} />
+
+            <div className={styles.rfCta}>
+              <span>Cover your shortfall</span>
+              <Link to="/goals" className={styles.rfCtaLink}>View Goals →</Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* ── Wealth Trajectory ── */}
+      {/* ── Summary rows ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Wealth Trajectory</h2>
-        <WealthProjectionChart data={projData} retirementGoal={retirementGoal} />
-      </section>
-
-      {/* ── Assets ── */}
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Assets</h2>
-        <div className={styles.table}>
-          <div className={`${styles.row} ${styles.thead}`}>
-            <span>Asset</span>
-            <span>Type</span>
-            <span>Value (USD)</span>
-            <span>Change</span>
-            <span>Allocation</span>
+        <div className={styles.summaryRows}>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryLabel}>Assets</span>
+            <span className={`${styles.summaryValue} ${styles.up}`}>{fmtCurrency(totalAssets, currency)}</span>
           </div>
-          {holdings.map(h => (
-            <div key={h.id} className={styles.row}>
-              <span>
-                <span className={styles.assetName}>{h.name}</span>
-                {(h.start_date || h.maturity_date) && (
-                  <span className={styles.dateLine}>
-                    {h.start_date}{h.start_date && h.maturity_date && ' → '}{h.maturity_date}
-                  </span>
-                )}
-                {h.contribution > 0 && h.contribution_freq !== 'None' && (
-                  <span className={styles.contribLine}>
-                    {fmtOrig(h.contribution, h.currency)}/{h.contribution_freq === 'Monthly' ? 'mo' : 'yr'}
-                  </span>
-                )}
-              </span>
-              <span><span className={styles.badge}>{h.type}</span></span>
-              <span>
-                {fmtUsd(h.value_usd)}
-                {h.currency !== 'USD' && (
-                  <span className={styles.origAmount}>{fmtOrig(h.value, h.currency)}</span>
-                )}
-              </span>
-              <span>
-                <span className={h.change >= 0 ? styles.up : styles.down}>
-                  {h.change >= 0 ? '+' : ''}{h.change}%
-                </span>
-                {(() => { const x = holdingXIRR(h); return x !== null ? (
-                  <span className={styles.xirrLine}>XIRR {(x * 100) >= 0 ? '+' : ''}{(x * 100).toFixed(1)}%</span>
-                ) : null })()}
-              </span>
-              <span>{h.allocation}%</span>
-            </div>
-          ))}
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryLabel}>Liabilities</span>
+            <span className={`${styles.summaryValue} ${styles.down}`}>{fmtCurrency(totalLiab, currency)}</span>
+          </div>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryLabel}>1D Change</span>
+            <span className={`${styles.summaryValue} ${dailyGain >= 0 ? styles.up : styles.down}`}>
+              {dailyGain >= 0 ? '▲' : '▼'}&nbsp;
+              {Math.abs(dailyPct).toFixed(2)}%&nbsp;&nbsp;
+              {dailyGain >= 0 ? '+' : '−'}{fmtCurrency(Math.abs(dailyGain), currency)}
+            </span>
+          </div>
         </div>
       </section>
+
     </main>
   )
 }

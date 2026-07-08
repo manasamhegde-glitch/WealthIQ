@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useCurrency } from '../contexts/CurrencyContext'
 import styles from './Navbar.module.css'
 
 const links = [
@@ -8,6 +9,8 @@ const links = [
 ]
 
 export default function Navbar() {
+  const { currency, setCurrency, options } = useCurrency()
+
   return (
     <nav className={styles.nav}>
       <span className={styles.brand}>WealthIQ</span>
@@ -24,6 +27,13 @@ export default function Navbar() {
           </NavLink>
         ))}
       </div>
+      <select
+        className={styles.currencySelect}
+        value={currency}
+        onChange={e => setCurrency(e.target.value)}
+      >
+        {options.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
       <div className={styles.user}>MH</div>
     </nav>
   )
